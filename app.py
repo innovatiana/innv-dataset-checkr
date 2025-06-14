@@ -405,7 +405,47 @@ def show_quality_checks_page():
             st.plotly_chart(fig_issues, use_container_width=True)
 
 
+def show_ai_validation_page():
+    """AI validation page"""
+    if not st.session_state.dataset_loaded:
+        st.warning("Please upload a dataset first")
+        return
+    
+    st.header(t('ai_validation'))
+    
+    if not st.session_state.mistral_client:
+        st.error("Mistral API not configured. Please set MISTRAL_API_KEY environment variable.")
+        return
+    
+    selected_checks = st.multiselect(
+        "Select the AI validation checks to perform",
+        options=[
+            "Check label correctness",
+            "Check content consistency",
+            "Detect bias",
+            "Check annotation completeness",
+            "Suggest corrections"
+        ],
+        default=["Check label correctness"]
+    )
+    
+    st.markdown("### Description of selected checks")
+    if "Check label correctness" in selected_checks:
+        st.info("✅ Checks whether the assigned label matches the actual media or text content.")
+    if "Check content consistency" in selected_checks:
+        st.warning("🧠 Analyzes for logical inconsistencies or hallucinated text.")
+    if "Detect bias" in selected_checks:
+        st.error("⚖️ Detects potential bias in annotation distribution or wording.")
+    if "Suggest corrections" in selected_checks:
+        st.success("🛠 Suggests a corrected version of the annotation or label.")
+    if "Check annotation completeness" in selected_checks:
+        st.info("🔍 Checks whether the annotation fully covers the expected content.")
 
+
+
+
+
+    
     # Run AI validation
     if st.button("Run AI Validation", type="primary"):
         with st.spinner("Running AI validation..."):
