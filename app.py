@@ -441,7 +441,36 @@ def show_ai_validation_page():
     if "Check annotation completeness" in selected_checks:
         st.info("🔍 Checks whether the annotation fully covers the expected content.")
 
-    
+
+# === Test Mistral LLM on annotations ===
+st.subheader("🧪 Mistral Test – Annotation Analysis")
+
+if st.button("Ask Mistral to Analyze Sample Annotations"):
+    try:
+        # Get 5 annotations (text only for now)
+        samples = st.session_state.dataset_loader.get_sample_data(5)
+        sample_texts = [s.get("text", "") for s in samples if "text" in s]
+
+        if not sample_texts:
+            st.warning("No text found in sample annotations.")
+        else:
+            prompt = (
+                "You are a data quality expert. Analyze the following annotations "
+                "and give a short report on their clarity, coherence, potential bias, and possible issues:\n\n"
+            )
+            for i, text in enumerate(sample_texts):
+                prompt += f"{i+1}. {text}\n"
+
+            # Send prompt to Mistral
+            client = st.session_state.mistral_client
+            response = client.chat(prompt)
+
+            # Display output
+            st.text_area("🔍 Mistral Response", value=response, height=300)
+
+    except Exception as e:
+        st.error(f"❌ Failed to query Mistral: {str(e)}")
+
     # AI validation settings
     col1, col2 = st.columns(2)
     with col1:
