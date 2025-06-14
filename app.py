@@ -405,92 +405,65 @@ def show_quality_checks_page():
             )
             st.plotly_chart(fig_issues, use_container_width=True)
 
+# LIBRAIRIE DE PROMPTS / CRITÈRES
+ai_validation_checks = {
+    "Label correctness": "Given this text and its label, does the label accurately describe the content? Justify your answer.",
+    "Label consistency": "Are the labels across similar texts consistent and coherent?",
+    "Label completeness": "Does the provided annotation cover all relevant aspects of this text?",
+    "Redundant labels": "Is the annotation overly detailed or repetitive for this type of content?",
+    "Spelling and grammar": "Does this text contain spelling or grammatical errors?",
+    "Logical consistency": "Does the text contain logical inconsistencies or contradictions?",
+    "Formatting consistency": "Does this dataset follow a consistent text formatting style?",
+    "Duplicates": "Identify if the following texts are exact or near duplicates.",
+    "Stereotypes or bias": "Does this text contain any gender, racial, or cultural stereotypes?",
+    "Label imbalance": "Analyze the label distribution. Are any classes underrepresented or overrepresented?",
+    "Subjectivity": "Is this annotation subjective or emotionally biased?",
+    "Toxicity": "Does this text contain any offensive, abusive, or inappropriate language?",
+    "PII detection": "Does this text include any personally identifiable information (PII) such as names, addresses, or IDs?",
+    "Dangerous content": "Does the text promote violence, hate speech, or misinformation?",
+    "Linguistic diversity": "Does this dataset include a diverse range of language styles, dialects, and expressions?",
+    "Topic variety": "Are there a broad range of topics represented in the dataset?",
+    "Length variation": "Are texts in the dataset varied in length, or are they overly uniform?",
+    "Text completeness": "Is this text complete or does it appear to be cut off or missing parts?",
+    "Relevance": "Is this text meaningful and relevant for the dataset’s purpose?",
+    "Readability": "Is the text easy to read and understand? Rate its clarity on a scale from 1 to 10.",
+    "Annotation guideline match": "Does this annotation conform to the project’s annotation guidelines?"
+}
 
-def show_ai_validation_page():
-    """AI validation page"""
-    if not st.session_state.dataset_loaded:
-        st.warning("Please upload a dataset first")
-        return
-    
-    st.header(t('ai_validation'))
-    
-    if not st.session_state.mistral_client:
-        st.error("Mistral API not configured. Please set MISTRAL_API_KEY environment variable.")
-        return
-    
-    selected_checks = st.multiselect(
-        "Select the AI validation checks to perform",
-        options=[
-            "Check label correctness",
-            "Check content consistency",
-            "Detect bias",
-            "Check annotation completeness",
-            "Suggest corrections"
-        ],
-        default=["Check label correctness"]
-    )
-    
-    st.markdown("### Description of selected checks")
-    if "Check label correctness" in selected_checks:
-        st.info("✅ Checks whether the assigned label matches the actual media or text content.")
-    if "Check content consistency" in selected_checks:
-        st.warning("🧠 Analyzes for logical inconsistencies or hallucinated text.")
-    if "Detect bias" in selected_checks:
-        st.error("⚖️ Detects potential bias in annotation distribution or wording.")
-    if "Suggest corrections" in selected_checks:
-        st.success("🛠 Suggests a corrected version of the annotation or label.")
-    if "Check annotation completeness" in selected_checks:
-        st.info("🔍 Checks whether the annotation fully covers the expected content.")
+st.markdown("### 🧪 Run a prompt for a specific AI validation criterion")
 
+for criterion, prompt_template in ai_validation_checks.items():
+    if st.button(f"🔍 {criterion}"):
+        with st.spinner(f"Sending Mistral prompt for: {criterion}"):
+            try:
+                # Fetch one usable text sample
+                samples = st.session_state.dataset_loader.get_sample_data(5)
+                usable_sample = None
 
+                for sample in samples:
+                    if isinstance(sample, dict):
+                        usable_sample = sample.get("text") or sample.get("content")
+                    elif isinstance(sample, str):
+                        try:
+                            parsed = json.loads(sample)
+                            usable_sample = parsed.get("text") or parsed.get("content")
+                        except:
+                            usable_sample = sample
+                    if usable_sample and len(usable_sample.strip()) > 20:
+                        break
 
+                if not usable_sample:
+                    st.error("❌ No valid text found in your dataset to send to Mistral.")
+                else:
+                    full_prompt = f"{prompt_template}\n\nExample:\n{usable_sample[:3000]}"
+                    response = st.session_state.mistral_client.query(prompt=full_prompt)
 
+                    st.markdown(f"#### 🧠 Prompt sent for: **{criterion}**")
+                    st.code(full_prompt, language="markdown")
+                    st.text_area("📥 Mistral's Response", value=response.strip(), height=300)
 
-    
-    # Run AI validation
-    if st.button("Run AI Validation", type="primary"):
-        with st.spinner("Running AI validation..."):
-            # Get samples
-            samples = st.session_state.dataset_loader.get_sample_data(100)
-            
-            # Configure AI checker
-            ai_checker = st.session_state.ai_checker
-            ai_checker.config.confidence_threshold = confidence_threshold
-            ai_checker.config.batch_size = batch_size
-            
-            # Progress bar
-            progress_bar = st.progress(0)
-            
-            def update_progress(progress):
-                progress_bar.progress(progress)
-            
-            # Run validation
-            ai_results = ai_checker.validate_dataset(
-                samples,
-                context={"selected_checks": selected_checks},
-                progress_callback=update_progress
-            )
-            
-            st.session_state.ai_results = ai_results
-            
-            # Show results
-            st.success("AI validation complete!")
-            
-            # Summary metrics
-            stats = ai_checker.aggregate_stats or {}
-            
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.metric("Validated", stats.get('total_validated', 0))
-            with col2:
-                st.metric("Valid", stats.get('valid_annotations', 0))
-            with col3:
-                st.metric("Invalid", stats.get('invalid_annotations', 0))
-            with col4:
-                avg_conf = stats.get('average_confidence', 0.0)
-                st.metric("Avg Confidence", f"{avg_conf:.2%}")
-
-
+            except Exception as e:
+                st.error(f"❌ Error while querying Mistral: {e}")
     
     # Section de test pour prompt libre avec Mistral
     st.markdown("### 🧪 Test Mistral Prompt")
