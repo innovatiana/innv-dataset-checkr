@@ -255,23 +255,6 @@ def show_upload_page():
                 st.error(f"{t('error')}: {str(e)}")
 
 
-if hasattr(st.session_state, "dataset_loader"):
-    loader = st.session_state.dataset_loader
-    extracted_text = loader.extract_text_snippets()
-
-    if extracted_text:
-        prompt = f"""You are a dataset quality expert. Analyze the following dataset content and summarize any issues, inconsistencies, or patterns.
-
-Dataset Content:
-{extracted_text}
-
-Respond with a clear summary in bullet points."""
-        mistral_response = mistral_client.query(prompt)
-        st.text_area("🧠 Mistral Analysis of Dataset Content", mistral_response, height=300)
-    else:
-        st.warning("No text content found in the dataset.")
-
-
 def show_overview_page():
     """Dataset overview page"""
     if not st.session_state.dataset_loaded:
