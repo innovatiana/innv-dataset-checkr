@@ -464,18 +464,19 @@ def show_ai_validation_page():
             st.success("AI validation complete!")
             
             # Summary metrics
-            stats = ai_checker.aggregate_stats
-            col1, col2, col3, col4 = st.columns(4)
+            stats = ai_checker.aggregate_stats or {}
             
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                st.metric("Validated", stats['total_validated'])
+                st.metric("Validated", stats.get('total_validated', 0))
             with col2:
-                st.metric("Valid", stats['valid_annotations'])
+                st.metric("Valid", stats.get('valid_annotations', 0))
             with col3:
-                st.metric("Invalid", stats['invalid_annotations'])
+                st.metric("Invalid", stats.get('invalid_annotations', 0))
             with col4:
-                st.metric("Avg Confidence", f"{stats['average_confidence']:.2%}")
-    
+                avg_conf = stats.get('average_confidence', 0.0)
+                st.metric("Avg Confidence", f"{avg_conf:.2%}")
+                
     # Display AI results
     if st.session_state.ai_results:
         st.subheader("AI Validation Results")
