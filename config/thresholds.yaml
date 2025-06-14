@@ -1,0 +1,167 @@
+# Quality Control Configuration
+# This file contains all configurable thresholds for the QA platform
+
+# Rule-based Quality Control Settings
+qc_rules:
+  # Bounding box thresholds
+  min_box_area: 100          # Minimum area in pixels squared
+  min_box_width: 5           # Minimum width in pixels
+  min_box_height: 5          # Minimum height in pixels
+  max_box_overlap_ratio: 0.95  # Maximum IoU for overlap detection
+  duplicate_iou_threshold: 0.95  # IoU threshold for duplicate detection
+  
+  # Temporal annotation thresholds
+  max_temporal_gap: 1.0      # Maximum gap between annotations in seconds
+  min_temporal_overlap: 0.1  # Minimum overlap to flag in seconds
+  
+  # Text/NLP thresholds
+  min_entity_length: 1       # Minimum entity length in characters
+  max_entity_length: 100     # Maximum entity length in characters
+  min_label_consensus: 0.7   # Minimum consensus for multi-annotator
+  text_similarity_threshold: 0.95  # Threshold for text similarity
+  
+  # Dataset-level thresholds
+  max_class_imbalance_ratio: 10.0  # Maximum ratio between largest and smallest class
+  min_samples_per_class: 10        # Minimum samples required per class
+  min_annotator_agreement: 0.8     # Minimum agreement between annotators
+
+# AI-powered Quality Control Settings
+ai_qc:
+  confidence_threshold: 0.7    # Minimum confidence for AI validation
+  batch_size: 10              # Number of items to process in parallel
+  max_workers: 4              # Maximum parallel workers
+  enable_correction_suggestions: true
+  validate_edge_cases: true
+  cross_validate_with_rules: true
+  cache_results: true
+  
+  # Model settings
+  default_model: "mistral-large-latest"
+  temperature: 0.1
+  max_retries: 3
+  rate_limit_per_minute: 60
+
+# Mistral API Configuration
+mistral_api:
+  base_url: "https://api.mistral.ai/v1"
+  cache_ttl: 3600  # Cache time-to-live in seconds
+  timeout: 30      # Request timeout in seconds
+
+# Supported formats and extensions
+supported_formats:
+  images:
+    - .jpg
+    - .jpeg
+    - .png
+    - .bmp
+    - .tiff
+    - .webp
+  
+  audio:
+    - .wav
+    - .mp3
+    - .flac
+    - .m4a
+    - .ogg
+  
+  video:
+    - .mp4
+    - .avi
+    - .mov
+    - .mkv
+    - .webm
+  
+  text:
+    - .txt
+    - .json
+    - .jsonl
+    - .csv
+
+# Annotation format mappings
+annotation_formats:
+  coco:
+    file_patterns:
+      - "**/annotations*.json"
+      - "**/*coco*.json"
+    required_fields:
+      - images
+      - annotations
+      - categories
+  
+  yolo:
+    file_patterns:
+      - "**/*.txt"
+    class_files:
+      - "classes.txt"
+      - "obj.names"
+    format: "class_id x_center y_center width height"
+  
+  jsonl:
+    file_patterns:
+      - "**/*.jsonl"
+    expected_fields:
+      - label
+      - text
+  
+  csv:
+    file_patterns:
+      - "**/*.csv"
+    label_columns:
+      - label
+      - class
+      - category
+
+# Report generation settings
+reports:
+  output_directory: "./reports"
+  include_visualizations: true
+  max_items_per_section: 100
+  
+  pdf:
+    page_size: "letter"
+    margins:
+      top: 72
+      bottom: 18
+      left: 72
+      right: 72
+  
+  excel:
+    include_charts: true
+    conditional_formatting: true
+  
+  csv:
+    delimiter: ","
+    include_headers: true
+
+# UI Configuration
+ui:
+  default_language: "en"
+  supported_languages:
+    - en
+    - fr
+  
+  theme:
+    primary_color: "#1f77b4"
+    success_color: "#2ca02c"
+    warning_color: "#ff7f0e"
+    error_color: "#d62728"
+  
+  pagination:
+    items_per_page: 50
+    max_preview_items: 10
+
+# Performance settings
+performance:
+  max_file_size_mb: 1000
+  chunk_size: 1000
+  enable_caching: true
+  cache_directory: "./cache"
+  temp_directory: "./temp_datasets"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "qa_platform.log"
+  max_file_size_mb: 10
+  backup_count: 5
