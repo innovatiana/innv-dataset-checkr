@@ -205,6 +205,47 @@ class DatasetLoader:
         except:
             pass
         return False
+
+    def extract_text_snippets(self, max_chars: int = 4000) -> str:
+        """
+        Extract a text summary (e.g. from annotations) for AI analysis.
+        Limits total characters for API compatibility.
+        """
+        snippets = []
+    
+        # Parcours des fichiers texte JSON, JSONL, CSV, TXT
+        for ext in ['.jsonl', '.json', '.csv', '.txt']:
+            for file in self.current_dataset_path.rglob(f'*{ext}'):
+                try:
+                    with open(file, 'r', encoding='utf-8') as f:
+                        if ext in ['.json', '.jsonl']:
+                            lines = f.readlines()
+                            for line in lines:
+                                if len("".join(snippets)) > max_chars:
+                                    break
+                                snippets.append(line.strip())
+                        elif ext == '.csv':
+                            lines = f.readlines()
+                            header = lines[0]
+                            snippets.append(header.strip())
+                            for line in lines[1:]:
+                                if len("".join(snippets)) > max_chars:
+                                    break
+                                snippets.append(line.strip())
+                        else:  # .txt
+                            lines = f.readlines()
+                            for line in lines:
+                                if len("".join(snippets)) > max_chars:
+                                    break
+                                snippets.append(line.strip())
+                except Exception as e:
+                    continue
+    
+                if len("".join(snippets)) > max_chars:
+                    break
+    
+        return "\n".join(snippets)[:max_chars]
+
     
     def _parse_annotations(self):
         """Parse annotations based on detected format"""
