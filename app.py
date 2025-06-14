@@ -442,6 +442,64 @@ def show_ai_validation_page():
         st.info("🔍 Checks whether the annotation fully covers the expected content.")
 
 
+with st.expander("🧠 Test a single AI validation criterion", expanded=False):
+    st.markdown("Select a criterion and run it on a sample from your dataset:")
+
+    # Library of prompt criteria
+    ai_validation_checks = {
+        "Label correctness": "Given this text and its label, does the label accurately describe the content? Justify your answer.",
+        "Label consistency": "Are the labels across similar texts consistent and coherent?",
+        "Label completeness": "Does the provided annotation cover all relevant aspects of this text?",
+        "Redundant labels": "Is the annotation overly detailed or repetitive for this type of content?",
+        "Spelling and grammar": "Does this text contain spelling or grammatical errors?",
+        "Logical consistency": "Does the text contain logical inconsistencies or contradictions?",
+        "Formatting consistency": "Does this dataset follow a consistent text formatting style?",
+        "Duplicates": "Identify if the following texts are exact or near duplicates.",
+        "Stereotypes or bias": "Does this text contain any gender, racial, or cultural stereotypes?",
+        "Label imbalance": "Analyze the label distribution. Are any classes underrepresented or overrepresented?",
+        "Subjectivity": "Is this annotation subjective or emotionally biased?",
+        "Toxicity": "Does this text contain any offensive, abusive, or inappropriate language?",
+        "PII detection": "Does this text include any personally identifiable information (PII) such as names, addresses, or IDs?",
+        "Dangerous content": "Does the text promote violence, hate speech, or misinformation?",
+        "Linguistic diversity": "Does this dataset include a diverse range of language styles, dialects, and expressions?",
+        "Topic variety": "Are there a broad range of topics represented in the dataset?",
+        "Length variation": "Are texts in the dataset varied in length, or are they overly uniform?",
+        "Text completeness": "Is this text complete or does it appear to be cut off or missing parts?",
+        "Relevance": "Is this text meaningful and relevant for the dataset’s purpose?",
+        "Readability": "Is the text easy to read and understand? Rate its clarity on a scale from 1 to 10.",
+        "Annotation guideline match": "Does this annotation conform to the project’s annotation guidelines?"
+    }
+
+    selected_criterion = st.selectbox("📝 Choose a validation check to run:", list(ai_validation_checks.keys()))
+
+    if st.button("▶️ Run test on a sample"):
+        with st.spinner("Analyzing sample with Mistral..."):
+            try:
+                # Extract sample text
+                samples = st.session_state.dataset_loader.get_sample_data(5)
+                sample_text = None
+                for s in samples:
+                    if isinstance(s, dict):
+                        sample_text = s.get("text") or s.get("content")
+                    elif isinstance(s, str):
+                        try:
+                            parsed = json.loads(s)
+                            sample_text = parsed.get("text") or parsed.get("content")
+                        except:
+                            sample_text = s
+                    if sample_text and len(sample_text.strip()) > 20:
+                        break
+
+                if not sample_text:
+                    st.warning("No suitable text found in your dataset.")
+                else:
+                    prompt = ai_validation_checks[selected_criterion] + "\n\nExample:\n" + sample_text[:3000]
+                    response = st.session_state.mistral_client.query(prompt=prompt)
+                    st.success(f"✅ AI response for: {selected_criterion}")
+                    st.text_area("📥 Mistral's Response", value=response.strip(), height=300)
+
+            except Exception as e:
+                st.error(f"❌ Error while calling Mistral: {e}")
 
 
 
