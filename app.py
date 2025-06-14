@@ -537,7 +537,7 @@ def show_ai_validation_page():
     
                 mistral = st.session_state.mistral_client
                 try:
-                    response = mistral.send_prompt(prompt)
+                    response = mistral.query(prompt)
                     st.text_area("💬 Mistral Response", value=response, height=400)
                 except Exception as e:
                     st.error(f"Error calling Mistral: {e}")
