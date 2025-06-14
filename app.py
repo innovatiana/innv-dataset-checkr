@@ -417,6 +417,31 @@ def show_ai_validation_page():
         st.error("Mistral API not configured. Please set MISTRAL_API_KEY environment variable.")
         return
     
+    selected_checks = st.multiselect(
+        "Select the AI validation checks to perform",
+        options=[
+            "Check label correctness",
+            "Check content consistency",
+            "Detect bias",
+            "Check annotation completeness",
+            "Suggest corrections"
+        ],
+        default=["Check label correctness"]
+    )
+    
+    st.markdown("### Description of selected checks")
+    if "Check label correctness" in selected_checks:
+        st.info("✅ Checks whether the assigned label matches the actual media or text content.")
+    if "Check content consistency" in selected_checks:
+        st.warning("🧠 Analyzes for logical inconsistencies or hallucinated text.")
+    if "Detect bias" in selected_checks:
+        st.error("⚖️ Detects potential bias in annotation distribution or wording.")
+    if "Suggest corrections" in selected_checks:
+        st.success("🛠 Suggests a corrected version of the annotation or label.")
+    if "Check annotation completeness" in selected_checks:
+        st.info("🔍 Checks whether the annotation fully covers the expected content.")
+
+    
     # AI validation settings
     col1, col2 = st.columns(2)
     with col1:
@@ -455,6 +480,7 @@ def show_ai_validation_page():
             # Run validation
             ai_results = ai_checker.validate_dataset(
                 samples,
+                context={"selected_checks": selected_checks},
                 progress_callback=update_progress
             )
             
