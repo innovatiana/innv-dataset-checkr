@@ -485,6 +485,28 @@ def show_ai_validation_page():
                 st.metric("Avg Confidence", f"{avg_conf:.2%}")
 
 
+    
+    # Section de test pour prompt libre avec Mistral
+    st.markdown("### 🧪 Test Mistral Prompt")
+    test_prompt = st.text_area("📝 Enter your prompt for Mistral", "Can you explain what AI is in simple terms?")
+    send_prompt = st.button("🚀 Send Prompt")
+    
+    if send_prompt:
+        try:
+            client = MistralClient()  # Assumes API key is in env or .streamlit/secrets.toml
+            response = client.query(prompt=test_prompt)
+    
+            st.success("✅ Response received from Mistral")
+            st.markdown("#### 🤖 Mistral's Response")
+            st.markdown(f"> {response.strip()}")
+            
+            # Optionally: Show raw response in expandable panel
+            with st.expander("🔍 Raw Response"):
+                st.code(response, language="text")
+    
+        except Exception as e:
+            st.error(f"❌ Error while querying Mistral: {e}")
+
     st.subheader("🧪 Mistral Text Analysis Test")
     if st.button("Send Dataset Text to Mistral"):
         with st.spinner("Reading dataset and sending to Mistral..."):
