@@ -12,7 +12,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import json
 
-from mistral_client import MistralClient
+from .mistral_client import MistralClient
 from qc_rules import QualityIssue, IssueType
 
 logging.basicConfig(level=logging.INFO)
