@@ -510,7 +510,7 @@ def show_ai_validation_page():
     st.subheader("🧪 Mistral Text Analysis Test")
     if st.button("Send Dataset Text to Mistral"):
         with st.spinner("Reading dataset and sending to Mistral..."):
-            dataset_path = st.session_state.dataset_loader.dataset_dir  # ZIP extracted folder
+            dataset_path = st.session_state.dataset_loader.current_dataset_path  # ZIP extracted folder
             text_content = []
     
             for root, _, files in os.walk(dataset_path):
