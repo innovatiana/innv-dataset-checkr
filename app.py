@@ -506,35 +506,40 @@ def show_ai_validation_page():
     # Display AI results
     if st.session_state.ai_results:
         st.subheader("AI Validation Results")
-        
-        # Low confidence annotations
-        ai_checker = st.session_state.ai_checker
-        low_conf = ai_checker.get_low_confidence_annotations()
-        
-        if low_conf:
-            st.warning(f"Found {len(low_conf)} low confidence annotations")
-            
-            # Show sample of low confidence
-            st.write("Sample Low Confidence Annotations:")
-            for result in low_conf[:5]:
-                with st.expander(f"Annotation {result.annotation_id}"):
-                    st.write(f"**Confidence:** {result.confidence:.2%}")
-                    st.write(f"**Valid:** {result.is_valid}")
-                    st.write(f"**Reasoning:** {result.reasoning}")
-                    if result.suggestions:
-                        st.write("**Suggestions:**")
-                        for suggestion in result.suggestions:
-                            st.write(f"- {suggestion}")
-        
-        # Confidence distribution
+    
+        for result in st.session_state.ai_results[:10]:
+            with st.expander(f"🔍 Annotation {result.annotation_id} – Confidence: {result.confidence:.2%}"):
+                st.markdown(f"**Is Valid:** {'✅ Yes' if result.is_valid else '❌ No'}")
+                st.markdown(f"**Reasoning:** {result.reasoning}")
+    
+                if hasattr(result, "issues") and result.issues:
+                    st.warning("⚠️ **Detected Issues:**")
+                    for issue in result.issues:
+                        st.write(f"- {issue}")
+    
+                if hasattr(result, "bias_flagged") and result.bias_flagged:
+                    st.error("🚨 **Potential Bias Detected**")
+                    st.write(f"> {result.bias_notes}")
+    
+                if hasattr(result, "corrected_annotation") and result.corrected_annotation:
+                    st.success("🔧 **Suggested Correction:**")
+                    st.json(result.corrected_annotation)
+    
+                if hasattr(result, "suggestions") and result.suggestions:
+                    st.info("💡 **Suggestions:**")
+                    for suggestion in result.suggestions:
+                        st.write(f"- {suggestion}")
+    
+        # Global histogram
+        st.markdown("### Confidence Score Distribution")
         confidences = [r.confidence for r in st.session_state.ai_results]
         fig_conf = px.histogram(
             x=confidences,
             nbins=20,
-            title="Confidence Score Distribution"
+            title="Confidence Scores"
         )
         fig_conf.update_xaxis(title="Confidence")
-        fig_conf.update_yaxis(title="Count")
+        fig_conf.update_yaxis(title="Number of Annotations")
         st.plotly_chart(fig_conf, use_container_width=True)
 
 
