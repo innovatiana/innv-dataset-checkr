@@ -77,12 +77,14 @@ class DatasetLoader:
             raise FileNotFoundError(f"Dataset not found: {file_path}")
         
         # Handle ZIP files
-        if file_path.suffix.lower() == '.zip':
-            extract_path = Path(extract_dir) if extract_dir else self.temp_dir / file_path.stem
-            self._extract_zip(file_path, extract_path)
-            self.current_dataset_path = extract_path
-        else:
-            self.current_dataset_path = file_path
+    if file_path.suffix.lower() == '.zip':
+        extract_path = Path(extract_dir) if extract_dir else self.temp_dir / file_path.stem
+        self._extract_zip(file_path, extract_path)
+        self.current_dataset_path = extract_path
+        self.dataset_dir = extract_path 
+    else:
+        self.current_dataset_path = file_path
+        self.dataset_dir = file_path
         
         # Initialize dataset info
         self.dataset_info = DatasetInfo(name=file_path.stem, total_files=0)
