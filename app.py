@@ -441,6 +441,11 @@ def show_ai_validation_page():
     if "Check annotation completeness" in selected_checks:
         st.info("🔍 Checks whether the annotation fully covers the expected content.")
 
+
+
+
+
+    
     # Run AI validation
     if st.button("Run AI Validation", type="primary"):
         with st.spinner("Running AI validation..."):
@@ -541,7 +546,72 @@ def show_ai_validation_page():
                     st.text_area("💬 Mistral Response", value=response, height=400)
                 except Exception as e:
                     st.error(f"Error calling Mistral: {e}")
-                
+
+    # NEW SECTION: Define available AI validation checks
+    ai_validation_checks = {
+        "Label correctness": "Given this text and its label, does the label accurately describe the content? Justify your answer.",
+        "Label consistency": "Are the labels across similar texts consistent and coherent?",
+        "Label completeness": "Does the provided annotation cover all relevant aspects of this text?",
+        "Redundant labels": "Is the annotation overly detailed or repetitive for this type of content?",
+        "Spelling and grammar": "Does this text contain spelling or grammatical errors?",
+        "Logical consistency": "Does the text contain logical inconsistencies or contradictions?",
+        "Formatting consistency": "Does this dataset follow a consistent text formatting style?",
+        "Duplicates": "Identify if the following texts are exact or near duplicates.",
+        "Stereotypes or bias": "Does this text contain any gender, racial, or cultural stereotypes?",
+        "Label imbalance": "Analyze the label distribution. Are any classes underrepresented or overrepresented?",
+        "Subjectivity": "Is this annotation subjective or emotionally biased?",
+        "Toxicity": "Does this text contain any offensive, abusive, or inappropriate language?",
+        "PII detection": "Does this text include any personally identifiable information (PII) such as names, addresses, or IDs?",
+        "Dangerous content": "Does the text promote violence, hate speech, or misinformation?",
+        "Linguistic diversity": "Does this dataset include a diverse range of language styles, dialects, and expressions?",
+        "Topic variety": "Are there a broad range of topics represented in the dataset?",
+        "Length variation": "Are texts in the dataset varied in length, or are they overly uniform?",
+        "Text completeness": "Is this text complete or does it appear to be cut off or missing parts?",
+        "Relevance": "Is this text meaningful and relevant for the dataset’s purpose?",
+        "Readability": "Is the text easy to read and understand? Rate its clarity on a scale from 1 to 10.",
+        "Annotation guideline match": "Does this annotation conform to the project’s annotation guidelines?"
+    }
+
+    selected_checks = st.multiselect(
+        "Select validation checks to run:",
+        options=list(ai_validation_checks.keys()),
+        default=["Label correctness"]
+    )
+
+    # Display explanation table
+    if selected_checks:
+        st.markdown("### 🧾 Selected Checks and Their Purpose")
+        for check in selected_checks:
+            st.markdown(f"- **{check}**: {ai_validation_checks[check]}")
+
+    # Prompt and response testing button
+    if st.button("🧠 Run selected AI validation prompts"):
+        with st.spinner("Sending selected prompts to Mistral..."):
+            mistral = st.session_state.mistral_client
+            loader = st.session_state.dataset_loader
+            samples = loader.get_sample_data(3)  # limited sample
+
+            results = []
+            for check in selected_checks:
+                prompt = ai_validation_checks[check] + "\n\nExample:\n" + samples[0].get("text", "<no text found>")
+                try:
+                    response = mistral.query(prompt=prompt)
+                    results.append((check, response.strip()))
+                except Exception as e:
+                    results.append((check, f"❌ Error: {str(e)}"))
+
+            # Display results
+            for check, res in results:
+                with st.expander(f"🔍 {check}"):
+                    st.markdown(res)
+
+    # (rest of show_ai_validation_page unchanged)
+
+
+
+
+
+    
     # Display AI results
     if st.session_state.ai_results:
         st.subheader("AI Validation Results")
