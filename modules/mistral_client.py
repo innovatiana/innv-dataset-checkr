@@ -128,27 +128,41 @@ class MistralClient:
                 "suggestions": []
             }
 
-    def _build_validation_prompt(self, content: Union[str, Dict], annotation: Dict, context: Optional[Dict]) -> str:
-        prompt_parts = []
-        prompt_parts.append(f"Content: {content if isinstance(content, str) else json.dumps(content, indent=2)}")
-        prompt_parts.append(f"\nAnnotation: {json.dumps(annotation, indent=2)}")
-        if context:
-            if "taxonomy" in context:
-                prompt_parts.append(f"\nAvailable Labels: {context['taxonomy']}")
-            if "rules" in context:
-                prompt_parts.append(f"\nAnnotation Rules: {context['rules']}")
-        prompt_parts.append("""
-\nPlease validate this annotation and respond with a JSON object like:
-{
-    "is_valid": boolean,
-    "confidence": float (0-1),
-    "reasoning": "explanation of validation decision",
-    "issues": ["list of issues"],
-    "suggestions": ["suggestions"],
-    "corrected_annotation": {optional corrected annotation}
-}
-""")
-        return "\n".join(prompt_parts)
+            def _build_validation_prompt(self, content: Union[str, Dict],
+                                         annotation: Dict,
+                                         context: Optional[Dict]) -> str:
+                checks = context.get("selected_checks", []) if context else []
+            
+                prompt_parts = []
+                prompt_parts.append(f"Content: {content if isinstance(content, str) else json.dumps(content, indent=2)}")
+                prompt_parts.append(f"\nAnnotation: {json.dumps(annotation, indent=2)}")
+                prompt_parts.append("\nPerform the following validation checks:")
+            
+                if "Check label correctness" in checks:
+                    prompt_parts.append("- Verify if the assigned label is correct.")
+                if "Check content consistency" in checks:
+                    prompt_parts.append("- Analyze whether the content is logical and coherent.")
+                if "Detect bias" in checks:
+                    prompt_parts.append("- Detect bias in the annotation or language.")
+                if "Check annotation completeness" in checks:
+                    prompt_parts.append("- Check if the annotation fully covers the relevant information.")
+                if "Suggest corrections" in checks:
+                    prompt_parts.append("- Suggest improved or corrected annotations, if needed.")
+            
+                prompt_parts.append("""
+            Return your response in JSON format:
+            {
+              "is_valid": true/false,
+              "confidence": float between 0 and 1,
+              "reasoning": "Explain the assessment",
+              "issues": ["List of detected issues"],
+              "suggestions": ["List of proposed corrections"],
+              "corrected_annotation": {... if applicable },
+              "bias_flagged": true/false,
+              "bias_notes": "Explanation of any identified bias"
+            }
+            """)
+                return "\n".join(prompt_parts)
 
     def _parse_validation_response(self, response: Dict) -> Dict:
         try:
