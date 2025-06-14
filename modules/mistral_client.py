@@ -164,6 +164,29 @@ class MistralClient:
             """)
                 return "\n".join(prompt_parts)
 
+    def query(self, prompt: str, model: str = "mistral-small-latest") -> str:
+        """
+        Send a freeform prompt to the Mistral API and return the plain text response.
+        """
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7
+        }
+
+        try:
+            response = self._make_request("chat/completions", payload)
+            return response["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"Freeform query failed: {e}")
+            return f"❌ Error: {e}"
+
+
+
+
+    
     def _parse_validation_response(self, response: Dict) -> Dict:
         try:
             content = response["choices"][0]["message"]["content"]
