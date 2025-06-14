@@ -24,6 +24,7 @@ from modules.mistral_client import MistralClient
 from modules.qc_ai import AIQualityChecker, HybridQualityChecker, AIQCConfig
 from modules.manual_review import ManualReviewInterface
 from modules.report_generator import ReportGenerator
+sys.path.append(os.path.join(os.path.dirname(__file__), "modules"))
 
 # Page configuration
 st.set_page_config(
