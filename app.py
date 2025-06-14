@@ -441,54 +441,6 @@ def show_ai_validation_page():
     if "Check annotation completeness" in selected_checks:
         st.info("🔍 Checks whether the annotation fully covers the expected content.")
 
-
-# === Test Mistral LLM on annotations ===
-st.subheader("🧪 Mistral Test – Annotation Analysis")
-
-if st.button("Ask Mistral to Analyze Sample Annotations"):
-    try:
-        # Get 5 annotations (text only for now)
-        samples = st.session_state.dataset_loader.get_sample_data(5)
-        sample_texts = [s.get("text", "") for s in samples if "text" in s]
-
-        if not sample_texts:
-            st.warning("No text found in sample annotations.")
-        else:
-            prompt = (
-                "You are a data quality expert. Analyze the following annotations "
-                "and give a short report on their clarity, coherence, potential bias, and possible issues:\n\n"
-            )
-            for i, text in enumerate(sample_texts):
-                prompt += f"{i+1}. {text}\n"
-
-            # Send prompt to Mistral
-            client = st.session_state.mistral_client
-            response = client.chat(prompt)
-
-            # Display output
-            st.text_area("🔍 Mistral Response", value=response, height=300)
-
-    except Exception as e:
-        st.error(f"❌ Failed to query Mistral: {str(e)}")
-
-    # AI validation settings
-    col1, col2 = st.columns(2)
-    with col1:
-        confidence_threshold = st.slider(
-            "Confidence Threshold",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.7,
-            step=0.05
-        )
-    with col2:
-        batch_size = st.number_input(
-            "Batch Size",
-            min_value=1,
-            max_value=50,
-            value=10
-        )
-    
     # Run AI validation
     if st.button("Run AI Validation", type="primary"):
         with st.spinner("Running AI validation..."):
@@ -531,6 +483,42 @@ if st.button("Ask Mistral to Analyze Sample Annotations"):
             with col4:
                 avg_conf = stats.get('average_confidence', 0.0)
                 st.metric("Avg Confidence", f"{avg_conf:.2%}")
+
+
+    st.subheader("🧪 Mistral Text Analysis Test")
+    if st.button("Send Dataset Text to Mistral"):
+        with st.spinner("Reading dataset and sending to Mistral..."):
+            dataset_path = st.session_state.dataset_info.dataset_path  # ZIP extracted folder
+            text_content = []
+    
+            for root, _, files in os.walk(dataset_path):
+                for file in files:
+                    if file.endswith(".txt") or file.endswith(".json"):  # optionally add .csv etc.
+                        file_path = os.path.join(root, file)
+                        try:
+                            with open(file_path, "r", encoding="utf-8") as f:
+                                content = f.read()
+                                if len(content.strip()) > 20:  # only keep non-empty files
+                                    text_content.append(content[:3000])  # truncate large files
+                        except Exception as e:
+                            st.warning(f"Error reading {file}: {e}")
+    
+            if not text_content:
+                st.error("❌ No readable text found in dataset files.")
+            else:
+                # Assemble a prompt
+                prompt = (
+                    "You are a dataset reviewer AI. Analyze the following dataset content "
+                    "and identify potential annotation issues, inconsistencies, or bias:\n\n"
+                    + "\n\n---\n\n".join(text_content[:3])  # Send first few texts
+                )
+    
+                mistral = st.session_state.mistral_client
+                try:
+                    response = mistral.send_prompt(prompt)
+                    st.text_area("💬 Mistral Response", value=response, height=400)
+                except Exception as e:
+                    st.error(f"Error calling Mistral: {e}")
                 
     # Display AI results
     if st.session_state.ai_results:
